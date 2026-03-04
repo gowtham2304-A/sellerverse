@@ -50,8 +50,8 @@ export default function Sidebar({ collapsed, setCollapsed }) {
                         className="flex items-center gap-3 overflow-hidden"
                         animate={{ opacity: 1 }}
                     >
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#7c3aed] to-[#06b6d4] flex items-center justify-center flex-shrink-0">
-                            <Zap size={18} className="text-white" />
+                        <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
+                            <img src="/logo.png" alt="SellerVerse Logo" className="w-full h-full object-cover" />
                         </div>
                         <AnimatePresence>
                             {!collapsed && (

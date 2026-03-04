@@ -72,9 +72,8 @@ export default function Signup() {
             >
                 {/* Logo */}
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
-                        style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(6,182,212,0.2))', border: '1px solid rgba(124,58,237,0.4)' }}>
-                        <Zap size={26} className="text-purple-400" />
+                    <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4 overflow-hidden border border-[rgba(124,58,237,0.4)] shadow-lg shadow-purple-500/20">
+                        <img src="/logo.png" alt="SellerVerse Logo" className="w-full h-full object-cover" />
                     </div>
                     <h1 className="text-2xl font-bold text-white">Create your account</h1>
                     <p className="text-sm text-gray-500 mt-1">Join SellerVerse — the universal D2C dashboard</p>

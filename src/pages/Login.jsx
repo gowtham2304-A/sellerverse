@@ -89,8 +89,8 @@ export default function Login() {
                     <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-500" />
 
                     <div className="flex flex-col items-center mb-8">
-                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-600 to-cyan-500 flex items-center justify-center mb-4 shadow-lg shadow-purple-500/30">
-                            <Zap size={32} className="text-white" />
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden mb-4 shadow-lg shadow-purple-500/20">
+                            <img src="/logo.png" alt="SellerVerse Logo" className="w-full h-full object-cover" />
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
                         <p className="text-sm text-gray-400 text-center">
