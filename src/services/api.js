@@ -138,6 +138,18 @@ export async function uploadCsv(file, platform = 'auto') {
     const isAvailable = await checkBackend();
     if (!isAvailable) return null;
 
+    let authData = localStorage.getItem('sellerverse_auth');
+    let token = authData;
+    if (authData && authData.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authData);
+            token = parsed.token || parsed.access_token || null;
+        } catch (e) {
+            token = null;
+        }
+    }
+
+    const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
     const formData = new FormData();
     formData.append('file', file);
 
@@ -145,6 +157,9 @@ export async function uploadCsv(file, platform = 'auto') {
         const res = await fetch(`${API_BASE}/upload/csv?platform=${encodeURIComponent(platform)}`, {
             method: 'POST',
             body: formData,
+            headers: {
+                ...authHeader
+            }
         });
         if (!res.ok) throw new Error(`Upload failed: ${res.status}`);
         return await res.json();
