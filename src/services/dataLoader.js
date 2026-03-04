@@ -8,13 +8,18 @@ import {
     dailyData, getKPIs, getPlatformSummaries,
     getRecentOrders, getProductPerformance,
     getPnLData, getStockData,
+    getEmptyKPIs, getEmptyDailyData, getEmptyPlatformSummaries,
+    getEmptyRecentOrders, getEmptyProductPerformance,
+    getEmptyPnLData, getEmptyStockData
 } from '../data/sampleData';
+
+const isAuth = () => !!localStorage.getItem('sellerverse_auth');
 
 
 // ── Overview ────────────────────────────────────────────
 export async function loadKPIs() {
     const data = await api.fetchKPIs();
-    if (!data) return getKPIs();
+    if (!data) return isAuth() ? getEmptyKPIs() : getKPIs();
     return {
         revenue: data.revenue,
         profit: data.profit,
@@ -27,7 +32,7 @@ export async function loadKPIs() {
 
 export async function loadDailyData(days = 30) {
     const data = await api.fetchDailyData(days);
-    if (!data) return dailyData;
+    if (!data) return isAuth() ? getEmptyDailyData() : dailyData;
     return data.map(d => ({
         day: d.day,
         month: d.month,
@@ -49,7 +54,7 @@ export async function loadRegions() {
 // ── Platforms ────────────────────────────────────────────
 export async function loadPlatformSummaries() {
     const data = await api.fetchPlatformSummaries();
-    if (!data) return getPlatformSummaries();
+    if (!data) return isAuth() ? getEmptyPlatformSummaries() : getPlatformSummaries();
     return data.map(p => ({
         id: p.slug,
         name: p.name,
@@ -73,7 +78,7 @@ export async function loadPlatformSummaries() {
 // ── Products ────────────────────────────────────────────
 export async function loadProductPerformance() {
     const data = await api.fetchProductPerformance();
-    if (!data) return getProductPerformance();
+    if (!data) return isAuth() ? getEmptyProductPerformance() : getProductPerformance();
     return data.map(p => ({
         id: p.id,
         name: p.name,
@@ -105,7 +110,8 @@ export async function loadProductPerformance() {
 export async function loadOrders(params = {}) {
     const data = await api.fetchOrders(params);
     if (!data) {
-        // Use local data
+        if (isAuth()) return getEmptyRecentOrders();
+        // Use local data fallback for public demo
         const allOrders = getRecentOrders();
         return { orders: allOrders, total: allOrders.length, isLocal: true };
     }
@@ -137,7 +143,7 @@ export async function loadOrders(params = {}) {
 // ── P&L ─────────────────────────────────────────────────
 export async function loadPnL() {
     const data = await api.fetchPnL();
-    if (!data) return getPnLData();
+    if (!data) return isAuth() ? getEmptyPnLData() : getPnLData();
     return {
         waterfall: data.waterfall,
         costBreakdown: data.cost_breakdown,
@@ -152,7 +158,7 @@ export async function loadPnL() {
 // ── Stock ───────────────────────────────────────────────
 export async function loadStock() {
     const data = await api.fetchStock();
-    if (!data) return getStockData();
+    if (!data) return isAuth() ? getEmptyStockData() : getStockData();
     return data.map(s => ({
         id: s.id,
         name: s.name,

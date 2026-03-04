@@ -366,6 +366,56 @@ function getPnLData() {
     return { waterfall, costBreakdown, dailyPnL, totalRevenue, grossProfit, netProfit, totalCOGS, totalFees, totalReturns, shipping, marketing, packaging };
 }
 
+// ── Empty Data Generators ──────────────────────────
+export function getEmptyKPIs() {
+    return {
+        revenue: { value: 0, change: '0.0' },
+        profit: { value: 0, change: '0.0' },
+        orders: { value: 0, change: '0.0' },
+        returns: { value: 0, change: '0.0' },
+        avgOrderValue: { value: 0, change: '0.0' },
+        profitMargin: { value: 0, change: '0.0' },
+    };
+}
+
+export function getEmptyDailyData() {
+    return [];
+}
+
+export function getEmptyPlatformSummaries() {
+    return [];
+}
+
+export function getEmptyProductPerformance() {
+    return [];
+}
+
+export function getEmptyRecentOrders() {
+    return { orders: [], total: 0 };
+}
+
+export function getEmptyPnLData() {
+    return {
+        waterfall: [
+            { name: 'Revenue', value: 0, fill: '#10b981', type: 'positive' },
+            { name: 'COGS', value: 0, fill: '#ef4444', type: 'negative' },
+            { name: 'Gross Profit', value: 0, fill: '#7c3aed', type: 'subtotal' },
+            { name: 'Platform Fees', value: 0, fill: '#ef4444', type: 'negative' },
+            { name: 'Returns', value: 0, fill: '#f59e0b', type: 'negative' },
+            { name: 'Net Profit', value: 0, fill: '#10b981', type: 'total' },
+        ],
+        costBreakdown: [],
+        dailyPnL: [],
+        totalRevenue: 0,
+        grossProfit: 0,
+        netProfit: 0
+    };
+}
+
+export function getEmptyStockData() {
+    return [];
+}
+
 export {
     platforms,
     allPlatforms,

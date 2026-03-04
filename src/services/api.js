@@ -22,11 +22,32 @@ async function apiFetch(path, options = {}) {
     const isAvailable = await checkBackend();
     if (!isAvailable) return null;
 
+    let token = localStorage.getItem('sellerverse_auth');
+    if (token && (token.startsWith('{') || token === '[object Object]')) {
+        console.warn('Cleaning up legacy auth token format');
+        localStorage.removeItem('sellerverse_auth');
+        token = null;
+    }
+    const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
+
     try {
         const res = await fetch(`${API_BASE}${path}`, {
-            headers: { 'Content-Type': 'application/json', ...options.headers },
+            headers: {
+                'Content-Type': 'application/json',
+                ...authHeader,
+                ...options.headers
+            },
             ...options,
         });
+        if (res.status === 401) {
+            console.error('Session expired, logging out...');
+            localStorage.removeItem('sellerverse_auth');
+            // Only redirect if we're not already on login/signup to avoid loops
+            if (!window.location.pathname.includes('/login') && !window.location.pathname.includes('/signup')) {
+                window.location.href = '/login';
+            }
+            return null;
+        }
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         return await res.json();
     } catch (err) {
