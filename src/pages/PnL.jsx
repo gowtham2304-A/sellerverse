@@ -62,11 +62,9 @@ export default function PnL() {
             setExporting(false);
         }
     };
-
-    if (!pnl) return <div className="text-center py-20 text-[#5a5a6e]">Loading...</div>;
-
     // Waterfall chart transformation
     const waterfallData = useMemo(() => {
+        if (!pnl) return [];
         let cumulative = 0;
         return pnl.waterfall.map(item => {
             const start = cumulative;
@@ -84,6 +82,8 @@ export default function PnL() {
             };
         });
     }, [pnl]);
+
+    if (!pnl) return <div className="text-center py-20 text-[#5a5a6e]">Loading...</div>;
 
     const summaryCards = [
         { label: 'Total Revenue', value: pnl.totalRevenue, color: '#7c3aed', icon: IndianRupee },
@@ -180,7 +180,7 @@ export default function PnL() {
                                         formatter={v => formatCurrency(Math.abs(v))}
                                         contentStyle={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', fontSize: '12px' }}
                                     />
-                                    <Bar dataKey="value" radius={[6, 6, 0, 0]} animationDuration={2000}>
+                                    <Bar dataKey="value" isAnimationActive={false}>
                                         {pnl.waterfall.map((entry, index) => (
                                             <Cell key={index} fill={entry.fill} fillOpacity={0.7} />
                                         ))}
@@ -209,8 +209,7 @@ export default function PnL() {
                                         outerRadius={75}
                                         paddingAngle={3}
                                         dataKey="value"
-                                        animationDuration={1500}
-                                        animationBegin={500}
+                                        isAnimationActive={false}
                                     >
                                         {pnl.costBreakdown.map((entry, index) => (
                                             <Cell key={index} fill={entry.color} stroke="transparent" />
@@ -246,7 +245,7 @@ export default function PnL() {
                         <ResponsiveContainer width="100%" height="100%">
                             <ComposedChart data={pnl.dailyPnL}>
                                 <defs>
-                                    <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <linearGradient id="pnlRevGrad" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="0%" stopColor="#7c3aed" stopOpacity={0.2} />
                                         <stop offset="100%" stopColor="#7c3aed" stopOpacity={0} />
                                     </linearGradient>
@@ -256,9 +255,9 @@ export default function PnL() {
                                 <YAxis yAxisId="left" stroke="#5a5a6e" fontSize={10} tickFormatter={v => formatCurrency(v)} />
                                 <YAxis yAxisId="right" orientation="right" stroke="#5a5a6e" fontSize={10} tickFormatter={v => `${v}%`} />
                                 <Tooltip contentStyle={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px', fontSize: '12px' }} />
-                                <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#7c3aed" fill="url(#revGrad)" strokeWidth={2} name="Revenue" animationDuration={2000} />
-                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" fillOpacity={0.5} radius={[3, 3, 0, 0]} name="Profit" animationDuration={2000} />
-                                <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#f59e0b" strokeWidth={1.5} dot={false} name="Margin %" animationDuration={2000} />
+                                <Area yAxisId="left" type="monotone" dataKey="revenue" stroke="#7c3aed" fill="url(#pnlRevGrad)" strokeWidth={2} name="Revenue" isAnimationActive={false} />
+                                <Bar yAxisId="left" dataKey="profit" fill="#10b981" fillOpacity={0.5} name="Profit" isAnimationActive={false} />
+                                <Line yAxisId="right" type="monotone" dataKey="margin" stroke="#f59e0b" strokeWidth={1.5} dot={false} name="Margin %" isAnimationActive={false} />
                             </ComposedChart>
                         </ResponsiveContainer>
                     </div>
