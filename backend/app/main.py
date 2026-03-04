@@ -22,9 +22,9 @@ async def lifespan(app: FastAPI):
     logging.info("🚀 Starting SellerVerse API...")
     try:
         # Create tables on startup (if they don't exist)
-        logging.info("📡 Connecting to database...")
+        logging.info("📡 Connecting to database (URL: %s)...", engine.url.database if hasattr(engine.url, 'database') else "SQLite")
         Base.metadata.create_all(bind=engine)
-        logging.info("✅ Database tables verified.")
+        logging.info("✅ Database tables verified and ready.")
     except Exception as db_err:
         logging.critical("❌ CRITICAL: Database connection failed: %s", db_err)
         # We don't exit here so the process can still report healthy while we fix it
