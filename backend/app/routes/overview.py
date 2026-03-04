@@ -155,3 +155,14 @@ def get_regions(
         ))
 
     return result
+
+
+@router.post("/sync-all")
+def force_sync_all_metrics(
+    db: DbDep,
+    current_user: User = Depends(get_current_user)
+):
+    """Manually trigger a full metric sync from the Orders table."""
+    from .upload import sync_dashboard_metrics
+    sync_dashboard_metrics(current_user.id, db)
+    return {"message": "Full metric synchronization completed successfully!"}

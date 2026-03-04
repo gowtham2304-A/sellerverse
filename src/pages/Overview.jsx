@@ -142,22 +142,38 @@ export default function Overview() {
 
     return (
         <motion.div variants={container} initial="hidden" animate="show" className="space-y-6">
-            {/* Period Selector */}
-            <motion.div variants={item} className="flex items-center gap-2">
-                {['7d', '14d', '30d'].map(period => (
-                    <motion.button
-                        key={period}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPeriod === period
-                            ? 'bg-gradient-to-r from-[rgba(124,58,237,0.2)] to-[rgba(6,182,212,0.15)] text-white border border-[rgba(124,58,237,0.3)]'
-                            : 'text-[#5a5a6e] hover:text-white bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.04)]'
-                            }`}
-                        onClick={() => setSelectedPeriod(period)}
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                    >
-                        {period === '7d' ? 'Last 7 days' : period === '14d' ? 'Last 14 days' : 'Last 30 days'}
-                    </motion.button>
-                ))}
+            {/* Period Selector & Sync */}
+            <motion.div variants={item} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    {['7d', '14d', '30d'].map(period => (
+                        <motion.button
+                            key={period}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPeriod === period
+                                ? 'bg-gradient-to-r from-[rgba(124,58,237,0.2)] to-[rgba(6,182,212,0.15)] text-white border border-[rgba(124,58,237,0.3)]'
+                                : 'text-[#5a5a6e] hover:text-white bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.04)]'
+                                }`}
+                            onClick={() => setSelectedPeriod(period)}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            {period === '7d' ? 'Last 7 days' : period === '14d' ? 'Last 14 days' : 'Last 30 days'}
+                        </motion.button>
+                    ))}
+                </div>
+
+                <motion.button
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium bg-[rgba(124,58,237,0.1)] text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all hover:text-white"
+                    onClick={async () => {
+                        const { apiFetch } = await import('../services/api');
+                        await apiFetch('/overview/sync-all', { method: 'POST' });
+                        window.location.reload();
+                    }}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                >
+                    <RotateCcw size={14} className="animate-spin-slow" />
+                    Sync Data
+                </motion.button>
             </motion.div>
 
             {/* KPI Cards */}

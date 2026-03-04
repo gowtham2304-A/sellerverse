@@ -1,6 +1,6 @@
 """CSV Upload endpoints with platform-aware parsing."""
 from typing import Annotated
-from datetime import datetime
+from datetime import datetime, date
 
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, Query
 from sqlalchemy.orm import Session
@@ -32,60 +32,70 @@ PLATFORM_PARSERS = {
 
 
 def sync_dashboard_metrics(user_id: int, db: Session):
-    """Recalculate DailyPlatformMetric and DailyProductSale from the Orders table."""
+    """Deep synchronization of all KPI tables based on the Orders table."""
     try:
         from sqlalchemy import func
-        from ..models import DailyPlatformMetric, Order, Platform, Product
-        from datetime import date
+        from ..models import DailyPlatformMetric, DailyProductSale, Order, Platform, Product
         
-        # Get all dates where this user has orders
+        # 1. Sync Platform Metrics
         dates = db.query(func.date(Order.order_date)).filter(Order.user_id == user_id).distinct().all()
-        
         for (d_val,) in dates:
             if not d_val: continue
-            if isinstance(d_val, str):
-                d = datetime.strptime(d_val[:10], "%Y-%m-%d").date()
-            else:
-                d = d_val
-                
-            # Aggegate by platform for this day
-            platform_stats = db.query(
+            d = d_val if not isinstance(d_val, str) else datetime.strptime(d_val[:10], "%Y-%m-%d").date()
+            
+            # Aggregate platform stats for this day
+            p_stats = db.query(
                 Order.platform_id,
                 func.count(Order.id).label("cnt"),
-                func.sum(Order.amount).label("rev"),
-                func.sum(Order.quantity).label("qty")
+                func.sum(Order.amount).label("rev")
             ).filter(Order.user_id == user_id, func.date(Order.order_date) == d).group_by(Order.platform_id).all()
             
-            for plat_id, cnt, rev, qty in platform_stats:
-                # Calculate estimated profit
-                plat = db.query(Platform).get(plat_id)
-                fee_rate = plat.fee_rate if plat else 0.15
+            for pid, cnt, rev in p_stats:
+                plat = db.query(Platform).filter(Platform.id == pid).first()
+                if not plat: continue
                 
-                # Estimate COGS (average 40% if not known)
-                fees = (rev or 0) * fee_rate
+                # Activate platform if it has data
+                if not plat.is_active: plat.is_active = True
+                
+                fees = (rev or 0) * plat.fee_rate
                 cogs = (rev or 0) * 0.40
-                returns_count = round(cnt * (plat.avg_return_rate if plat else 0.1))
-                return_val = returns_count * ((rev or 0)/cnt if cnt else 0)
-                profit = (rev or 0) - fees - cogs - return_val
+                ret_cnt = round(cnt * plat.avg_return_rate)
+                ret_val = (rev or 0) * plat.avg_return_rate
                 
-                # Update or create metric
-                metric = db.query(DailyPlatformMetric).filter_by(user_id=user_id, platform_id=plat_id, date=d).first()
-                if not metric:
-                    metric = DailyPlatformMetric(user_id=user_id, platform_id=plat_id, date=d)
-                    db.add(metric)
+                m = db.query(DailyPlatformMetric).filter_by(user_id=user_id, platform_id=pid, date=d).first()
+                if not m:
+                    m = DailyPlatformMetric(user_id=user_id, platform_id=pid, date=d)
+                    db.add(m)
                 
-                metric.orders_count = cnt
-                metric.revenue = rev or 0
-                metric.fees = fees
-                metric.cogs = cogs
-                metric.returns_count = returns_count
-                metric.return_value = return_val
-                metric.profit = profit
-                metric.avg_order_value = rev/cnt if cnt else 0
+                m.orders_count = cnt
+                m.revenue = rev or 0
+                m.fees = fees
+                m.cogs = cogs
+                m.returns_count = ret_cnt
+                m.return_value = ret_val
+                m.profit = (rev or 0) - fees - cogs - ret_val
+                m.avg_order_value = rev/cnt if cnt else 0
+
+        # 2. Sync Product Metrics
+        prod_stats = db.query(
+            Order.product_id,
+            func.date(Order.order_date).label("d"),
+            func.sum(Order.quantity).label("qty"),
+            func.sum(Order.amount).label("rev")
+        ).filter(Order.user_id == user_id).group_by(Order.product_id, "d").all()
         
+        for prid, d_val, qty, rev in prod_stats:
+            d = d_val if not isinstance(d_val, str) else datetime.strptime(d_val[:10], "%Y-%m-%d").date()
+            ps = db.query(DailyProductSale).filter_by(user_id=user_id, product_id=prid, date=d).first()
+            if not ps:
+                ps = DailyProductSale(user_id=user_id, product_id=prid, date=d)
+                db.add(ps)
+            ps.sales_count = qty or 0
+            ps.revenue = rev or 0
+
         db.commit()
     except Exception as e:
-        print(f"Error in sync_dashboard_metrics: {e}")
+        print(f"Sync error: {e}")
         db.rollback()
 
 @router.post("/csv")
