@@ -17,8 +17,8 @@ const isAuth = () => !!localStorage.getItem('sellerverse_auth');
 
 
 // ── Overview ────────────────────────────────────────────
-export async function loadKPIs() {
-    const data = await api.fetchKPIs();
+export async function loadKPIs(days = 30) {
+    const data = await api.fetchKPIs(days);
     if (!data) return isAuth() ? getEmptyKPIs() : getKPIs();
     return {
         revenue: data.revenue,

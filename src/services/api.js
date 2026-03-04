@@ -65,8 +65,8 @@ async function apiFetch(path, options = {}) {
 }
 
 // ── Overview ─────────────────────────────────────────
-export async function fetchKPIs() {
-    return apiFetch('/overview/kpis');
+export async function fetchKPIs(days = 30) {
+    return apiFetch(`/overview/kpis?days=${days}`);
 }
 
 export async function fetchDailyData(days = 30) {

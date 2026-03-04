@@ -19,6 +19,7 @@ DbDep = Annotated[Session, Depends(get_db)]
 @router.get("/kpis")
 def get_kpis(
     db: DbDep,
+    days: int = 30,
     current_user: User = Depends(get_current_user)
 ) -> KPIResponse:
     # 🕵️ Auto-detect data range
@@ -30,9 +31,9 @@ def get_kpis(
     else:
         ref_date = date.today()
 
-    last_7_start = ref_date - timedelta(days=7)
-    prev_7_start = ref_date - timedelta(days=14)
-    d30_start = ref_date - timedelta(days=30)
+    current_start = ref_date - timedelta(days=days)
+    prev_end = current_start - timedelta(days=1)
+    prev_start = prev_end - timedelta(days=days)
 
     active_ids = [p.id for p in db.query(Platform.id).filter(Platform.user_id == current_user.id, Platform.is_active == True).all()]
 
@@ -59,9 +60,9 @@ def get_kpis(
         )
         return q
 
-    current = _sum_period(last_7_start, ref_date)
-    prev = _sum_period(prev_7_start, last_7_start - timedelta(days=1))
-    totals = _sum_period(d30_start, ref_date)
+    current = _sum_period(current_start, ref_date)
+    prev = _sum_period(prev_start, prev_end)
+    totals = current
 
     def pct(cur, pre) -> float:
         cur_val = float(cur or 0)
@@ -89,7 +90,7 @@ def get_kpis(
 @router.get("/daily")
 def get_daily_data(
     db: DbDep,
-    days: Annotated[int, Query(ge=7, le=90)] = 30,
+    days: int = 30,
     current_user: User = Depends(get_current_user)
 ) -> list[DailyOverview]:
     # 🕵️ Auto-detect data range

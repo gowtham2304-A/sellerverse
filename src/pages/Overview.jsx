@@ -55,11 +55,16 @@ export default function Overview() {
     const [selectedPeriod, setSelectedPeriod] = useState('30d');
 
     useEffect(() => {
-        loadKPIs().then(setKpis);
-        loadDailyData(30).then(setDaily);
+        let days = 30;
+        if (selectedPeriod === '7d') days = 7;
+        if (selectedPeriod === '14d') days = 14;
+        if (selectedPeriod === 'all') days = 9999;
+
+        loadKPIs(days).then(setKpis);
+        loadDailyData(days).then(setDaily);
         loadPlatformSummaries().then(setPlatformSummaries);
         loadOrders({ page: 1, perPage: 8 }).then(res => setRecentOrders(res.orders));
-    }, []);
+    }, [selectedPeriod]);
 
     if (!kpis) return <div className="text-center py-20 text-[#5a5a6e]">Loading...</div>;
 
@@ -145,7 +150,7 @@ export default function Overview() {
             {/* Period Selector & Sync */}
             <motion.div variants={item} className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    {['7d', '14d', '30d'].map(period => (
+                    {['7d', '14d', '30d', 'all'].map(period => (
                         <motion.button
                             key={period}
                             className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${selectedPeriod === period
@@ -156,7 +161,7 @@ export default function Overview() {
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                         >
-                            {period === '7d' ? 'Last 7 days' : period === '14d' ? 'Last 14 days' : 'Last 30 days'}
+                            {period === '7d' ? 'Last 7 days' : period === '14d' ? 'Last 14 days' : period === '30d' ? 'Last 30 days' : 'All Time'}
                         </motion.button>
                     ))}
                 </div>
