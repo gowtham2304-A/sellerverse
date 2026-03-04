@@ -39,8 +39,11 @@ export default function Signup() {
             const data = await res.json();
             if (!res.ok) throw new Error(data.detail || 'Registration failed');
 
-            // Store token string
-            localStorage.setItem('sellerverse_auth', data.access_token);
+            // Store token and user info
+            localStorage.setItem('sellerverse_auth', JSON.stringify({
+                token: data.access_token,
+                user: data.user
+            }));
 
             addToast(`Welcome to SellerVerse, ${data.user.name}! 🎉`, 'success');
             navigate('/');

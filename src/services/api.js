@@ -22,12 +22,20 @@ async function apiFetch(path, options = {}) {
     const isAvailable = await checkBackend();
     if (!isAvailable) return null;
 
-    let token = localStorage.getItem('sellerverse_auth');
-    if (token && (token.startsWith('{') || token === '[object Object]')) {
-        console.warn('Cleaning up legacy auth token format');
-        localStorage.removeItem('sellerverse_auth');
-        token = null;
+    let authData = localStorage.getItem('sellerverse_auth');
+    let token = authData;
+
+    // Check if authData is a JSON string (modern format)
+    if (authData && authData.startsWith('{')) {
+        try {
+            const parsed = JSON.parse(authData);
+            token = parsed.token || parsed.access_token || null;
+        } catch (e) {
+            console.warn('Failed to parse auth data:', e);
+            token = null;
+        }
     }
+
     const authHeader = token ? { 'Authorization': `Bearer ${token}` } : {};
 
     try {
@@ -153,6 +161,11 @@ export async function fetchUploadHistory() {
 // ── Seed ────────────────────────────────────────────
 export async function seedDatabase() {
     return apiFetch('/seed', { method: 'POST' });
+}
+
+// ── Auth ────────────────────────────────────────────
+export async function fetchMe() {
+    return apiFetch('/auth/me');
 }
 
 // ── Utility ─────────────────────────────────────────

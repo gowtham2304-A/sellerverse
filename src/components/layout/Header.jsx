@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Menu, Database, LogOut, ShoppingCart, Package, Store } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useBackendStatus } from '../../hooks/useApiData';
+import { fetchMe } from '../../services/api';
 import NotificationBell from '../ui/NotificationBell';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -161,11 +162,49 @@ export default function Header({ title, subtitle, collapsed, setCollapsed }) {
     const navigate = useNavigate();
     const [showProfileMenu, setShowProfileMenu] = useState(false);
     const profileRef = useRef(null);
+    const [realUser, setRealUser] = useState(null);
 
-    const user = (() => {
-        try { return JSON.parse(localStorage.getItem('sellerverse_auth'))?.user || null; } catch { return null; }
-    })();
-    const initials = user?.name ? user.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SV';
+    // Initial load from localStorage
+    useEffect(() => {
+        try {
+            const auth = localStorage.getItem('sellerverse_auth');
+            if (auth && auth.startsWith('{')) {
+                const parsed = JSON.parse(auth);
+                if (parsed.user) setRealUser(parsed.user);
+            }
+        } catch (e) { console.error('Error loading user from storage:', e); }
+    }, []);
+
+    // Self-healing: fetch user info if missing but token exists
+    useEffect(() => {
+        if (!realUser && localStorage.getItem('sellerverse_auth')) {
+            const loadMe = async () => {
+                const userData = await fetchMe();
+                if (userData) {
+                    setRealUser(userData);
+                    // Standardize storage format for next time
+                    const currentAuth = localStorage.getItem('sellerverse_auth');
+                    if (currentAuth && !currentAuth.startsWith('{')) {
+                        localStorage.setItem('sellerverse_auth', JSON.stringify({
+                            token: currentAuth,
+                            user: userData
+                        }));
+                    } else if (currentAuth) {
+                        try {
+                            const parsed = JSON.parse(currentAuth);
+                            localStorage.setItem('sellerverse_auth', JSON.stringify({
+                                ...parsed,
+                                user: userData
+                            }));
+                        } catch { /* ignore */ }
+                    }
+                }
+            };
+            loadMe();
+        }
+    }, [realUser]);
+
+    const initials = realUser?.name ? realUser.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2) : 'SV';
 
     const handleLogout = () => {
         localStorage.removeItem('sellerverse_auth');
@@ -233,11 +272,11 @@ export default function Header({ title, subtitle, collapsed, setCollapsed }) {
                                 style={{ background: '#1a1a24', border: '1px solid rgba(255,255,255,0.06)' }}
                             >
                                 <div className="p-3 border-b border-[rgba(255,255,255,0.04)]">
-                                    <p className="text-xs font-semibold text-white">{user?.name || 'Admin User'}</p>
-                                    <p className="text-[10px] text-[#5a5a6e]">{user?.email || 'admin@sellerverse.com'}</p>
+                                    <p className="text-xs font-semibold text-white truncate max-w-[150px]">{realUser?.name || 'Loading Profile...'}</p>
+                                    <p className="text-[10px] text-[#5a5a6e] truncate max-w-[150px]">{realUser?.email || 'Syncing account...'}</p>
                                     <span className="inline-block mt-1 px-1.5 py-0.5 rounded text-[9px] font-medium text-purple-300"
                                         style={{ background: 'rgba(124,58,237,0.2)' }}>
-                                        {(user?.plan || 'free').toUpperCase()}
+                                        {(realUser?.plan || 'free').toUpperCase()}
                                     </span>
                                 </div>
                                 <div className="p-1">

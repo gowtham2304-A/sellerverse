@@ -43,7 +43,26 @@ export default function Login() {
             }
 
             const data = await response.json();
-            localStorage.setItem('sellerverse_auth', data.access_token);
+
+            // Fetch user info to store in localStorage for the UI
+            try {
+                const meRes = await fetch(`${API_BASE}/api/auth/me`, {
+                    headers: { 'Authorization': `Bearer ${data.access_token}` }
+                });
+                if (meRes.ok) {
+                    const userData = await meRes.json();
+                    localStorage.setItem('sellerverse_auth', JSON.stringify({
+                        token: data.access_token,
+                        user: userData
+                    }));
+                } else {
+                    localStorage.setItem('sellerverse_auth', data.access_token);
+                }
+            } catch (error) {
+                console.error('Failed to fetch user data after login:', error);
+                localStorage.setItem('sellerverse_auth', data.access_token);
+            }
+
             addToast('Welcome back to SellerVerse!', 'success');
             navigate('/');
         } catch (error) {
