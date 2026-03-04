@@ -10,7 +10,8 @@ from sqlalchemy import func
 import pandas as pd
 
 from ..database import get_db
-from ..models import Order, Product, Platform, DailyPlatformMetric, CostEntry
+from ..models import Order, Product, Platform, DailyPlatformMetric, CostEntry, User
+from .auth import get_current_user
 
 router = APIRouter(prefix="/export", tags=["export"])
 
@@ -19,6 +20,7 @@ router = APIRouter(prefix="/export", tags=["export"])
 @router.get("/orders")
 def export_orders(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     start_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
     end_date: Optional[str] = Query(None, description="YYYY-MM-DD"),
     platform: Optional[str] = Query(None),
@@ -42,6 +44,7 @@ def export_orders(
         )
         .join(Product, Order.product_id == Product.id)
         .join(Platform, Order.platform_id == Platform.id)
+        .filter(Order.user_id == current_user.id)
     )
 
     # Apply filters
@@ -78,6 +81,7 @@ def export_orders(
 @router.get("/pnl")
 def export_pnl(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     format: str = Query("xlsx"),
@@ -98,7 +102,7 @@ def export_pnl(
             func.sum(DailyPlatformMetric.profit).label("profit"),
             func.sum(DailyPlatformMetric.orders_count).label("orders"),
         )
-        .filter(DailyPlatformMetric.date.between(sd, ed))
+        .filter(DailyPlatformMetric.user_id == current_user.id, DailyPlatformMetric.date.between(sd, ed))
         .group_by(DailyPlatformMetric.date)
         .order_by(DailyPlatformMetric.date)
         .all()
@@ -111,7 +115,7 @@ def export_pnl(
             CostEntry.category,
             CostEntry.amount,
         )
-        .filter(CostEntry.date.between(sd, ed))
+        .filter(CostEntry.user_id == current_user.id, CostEntry.date.between(sd, ed))
         .order_by(CostEntry.date)
         .all()
     )
@@ -182,10 +186,11 @@ def export_pnl(
 @router.get("/products")
 def export_products(
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     format: str = Query("xlsx"),
 ):
     """Export products inventory as Excel or CSV."""
-    products = db.query(Product).all()
+    products = db.query(Product).filter(Product.user_id == current_user.id).all()
 
     rows = []
     for p in products:

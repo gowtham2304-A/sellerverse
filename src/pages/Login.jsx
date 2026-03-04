@@ -82,14 +82,16 @@ export default function Login() {
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-gray-100 ml-1">Email or Seller ID</label>
-                            <div className="relative flex items-center">
-                                <Mail size={16} className="absolute text-gray-400" style={{ left: '1rem' }} />
+                            <div className="relative">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                                    <Mail size={18} className="text-gray-400" />
+                                </div>
                                 <input
                                     type="text"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
-                                    style={{ backgroundColor: '#111118', borderColor: '#3f3f4e', paddingLeft: '3rem' }}
-                                    className="w-full border rounded-xl py-3 pr-4 text-sm text-white focus:border-purple-500 outline-none transition-all placeholder-gray-500"
+                                    style={{ backgroundColor: '#111118', borderColor: email ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.1)', paddingLeft: '3.5rem' }}
+                                    className="w-full border rounded-xl py-3.5 pr-4 text-sm text-white focus:border-purple-500/50 outline-none transition-all placeholder-gray-500 shadow-inner"
                                     placeholder="admin@sellerverse.com"
                                 />
                             </div>
@@ -100,14 +102,16 @@ export default function Login() {
                                 <label className="text-xs font-medium text-gray-100">Password</label>
                                 <a href="#" className="text-xs text-cyan-400 hover:text-white transition-colors">Forgot?</a>
                             </div>
-                            <div className="relative flex items-center">
-                                <Lock size={16} className="absolute text-gray-400" style={{ left: '1rem' }} />
+                            <div className="relative">
+                                <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+                                    <Lock size={18} className="text-gray-400" />
+                                </div>
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
-                                    style={{ backgroundColor: '#111118', borderColor: '#3f3f4e', paddingLeft: '3rem' }}
-                                    className="w-full border rounded-xl py-3 pr-4 text-sm text-white focus:border-purple-500 outline-none transition-all placeholder-gray-500"
+                                    style={{ backgroundColor: '#111118', borderColor: password ? 'rgba(124,58,237,0.4)' : 'rgba(255,255,255,0.1)', paddingLeft: '3.5rem' }}
+                                    className="w-full border rounded-xl py-3.5 pr-4 text-sm text-white focus:border-purple-500/50 outline-none transition-all placeholder-gray-500 shadow-inner"
                                     placeholder="••••••••"
                                 />
                             </div>
@@ -115,10 +119,11 @@ export default function Login() {
 
                         <motion.button
                             type="submit"
-                            className="w-full btn-primary py-3 rounded-xl font-medium text-sm flex items-center justify-center gap-2"
+                            className="w-full py-3.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-all shadow-lg"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
                             disabled={isLoading}
+                            style={{ background: 'linear-gradient(135deg, #7c3aed, #2563eb)', opacity: isLoading ? 0.7 : 1, boxShadow: '0 4px 15px rgba(124,58,237,0.3)' }}
                         >
                             {isLoading ? (
                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />

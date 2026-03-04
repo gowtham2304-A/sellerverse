@@ -9,18 +9,18 @@ from ..models import Notification
 
 router = APIRouter(prefix="/api/notifications", tags=["Notifications"])
 
-# Mock user dep (replace with JWT when multi-user)
-def _user_id():
-    return 1
+from .auth import get_current_user
+from ..models import Notification, User
 
 
 @router.get("")
 def list_notifications(
     db: Session = Depends(get_db),
-    user_id: int = Depends(_user_id),
+    current_user: User = Depends(get_current_user),
     unread_only: bool = Query(False),
     limit: int = Query(20, le=100),
 ):
+    user_id = current_user.id
     q = db.query(Notification).filter(Notification.user_id == user_id)
     if unread_only:
         q = q.filter(Notification.is_read == False)
@@ -50,8 +50,9 @@ def list_notifications(
 def mark_read(
     notification_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(_user_id),
+    current_user: User = Depends(get_current_user),
 ):
+    user_id = current_user.id
     n = db.query(Notification).filter_by(id=notification_id, user_id=user_id).first()
     if n:
         n.is_read = True
@@ -62,8 +63,9 @@ def mark_read(
 @router.post("/read-all")
 def mark_all_read(
     db: Session = Depends(get_db),
-    user_id: int = Depends(_user_id),
+    current_user: User = Depends(get_current_user),
 ):
+    user_id = current_user.id
     db.query(Notification).filter_by(user_id=user_id, is_read=False).update({"is_read": True})
     db.commit()
     return {"ok": True}
@@ -73,8 +75,9 @@ def mark_all_read(
 def delete_notification(
     notification_id: int,
     db: Session = Depends(get_db),
-    user_id: int = Depends(_user_id),
+    current_user: User = Depends(get_current_user),
 ):
+    user_id = current_user.id
     db.query(Notification).filter_by(id=notification_id, user_id=user_id).delete()
     db.commit()
     return {"ok": True}

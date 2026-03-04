@@ -5,7 +5,8 @@ from sqlalchemy.orm import Session
 from sqlalchemy import or_
 
 from ..database import get_db
-from ..models import Order, Product, Platform
+from ..models import Order, Product, Platform, User
+from .auth import get_current_user
 
 router = APIRouter(prefix="/api/search", tags=["Search"])
 
@@ -14,6 +15,7 @@ router = APIRouter(prefix="/api/search", tags=["Search"])
 def global_search(
     q: str = Query(..., min_length=2, description="Search query"),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
     limit: int = Query(10, le=30),
 ):
     """Search across orders, products, and platforms simultaneously."""
@@ -25,6 +27,7 @@ def global_search(
         db.query(Order, Product.name.label("product_name"), Platform.name.label("platform_name"))
         .join(Product, Order.product_id == Product.id)
         .join(Platform, Order.platform_id == Platform.id)
+        .filter(Order.user_id == current_user.id)
         .filter(
             or_(
                 Order.order_id.ilike(term),
@@ -54,6 +57,7 @@ def global_search(
     # Products
     products = (
         db.query(Product)
+        .filter(Product.user_id == current_user.id)
         .filter(
             or_(
                 Product.name.ilike(term),
@@ -80,6 +84,7 @@ def global_search(
     # Platforms
     platforms = (
         db.query(Platform)
+        .filter(Platform.user_id == current_user.id)
         .filter(or_(Platform.name.ilike(term), Platform.slug.ilike(term)))
         .limit(5)
         .all()

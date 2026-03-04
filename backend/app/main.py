@@ -73,9 +73,4 @@ def health() -> dict[str, str]:
     return {"status": "healthy"}
 
 
-@app.post("/seed")
-def seed_database() -> dict[str, str]:
-    """Seed the database with sample data. WARNING: This drops all existing data."""
-    from .seed import seed_database as run_seed
-    run_seed()
-    return {"message": "Database seeded successfully"}
+# Seed endpoint removed for production security. Demo data is auto-generated on signup.
