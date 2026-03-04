@@ -19,10 +19,24 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Create tables on startup (if they don't exist)
-    Base.metadata.create_all(bind=engine)
-    # Start background scheduler
-    start_scheduler()
+    logging.info("🚀 Starting SellerVerse API...")
+    try:
+        # Create tables on startup (if they don't exist)
+        logging.info("📡 Connecting to database...")
+        Base.metadata.create_all(bind=engine)
+        logging.info("✅ Database tables verified.")
+    except Exception as db_err:
+        logging.critical("❌ CRITICAL: Database connection failed: %s", db_err)
+        # We don't exit here so the process can still report healthy while we fix it
+        # However, for status 3 debugging, it's good to know if this failed.
+        pass
+
+    try:
+        # Start background scheduler
+        start_scheduler()
+    except Exception as sch_err:
+        logging.error("⚠️ Scheduler failed to start: %s", sch_err)
+
     yield
     # Stop scheduler on shutdown
     stop_scheduler()
