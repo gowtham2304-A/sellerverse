@@ -181,61 +181,41 @@ def get_regions(
     return result
 
 
+@router.get("/debug-data")
+def debug_all_data(db: DbDep):
+    """Diagnostic endpoint for all data in system."""
+    from ..models import Order, DailyPlatformMetric, Platform, Product, CsvUpload, User
+    
+    users = db.query(User).all()
+    results = []
+    for u in users:
+        results.append({
+            "id": u.id,
+            "email": u.email,
+            "counts": {
+                "orders": db.query(Order).filter_by(user_id=u.id).count(),
+                "metrics": db.query(DailyPlatformMetric).filter_by(user_id=u.id).count(),
+                "platforms": db.query(Platform).filter_by(user_id=u.id).count(),
+                "uploads": db.query(CsvUpload).filter_by(user_id=u.id).count(),
+            },
+            "platforms": [p.slug for p in db.query(Platform).filter_by(user_id=u.id).all()],
+            "recent_uploads": [
+                {"id": up.id, "status": up.status, "rows": up.rows_processed, "error": up.error_message}
+                for up in db.query(CsvUpload).filter_by(user_id=u.id).order_by(CsvUpload.uploaded_at.desc()).limit(3).all()
+            ]
+        })
+    return {
+        "total_users": len(users),
+        "user_summaries": results
+    }
+
+
 @router.post("/sync-all")
 def force_sync_all_metrics(
-    db: DbDep
-):
-    """Manually trigger a full metric sync from the Orders table."""
-    from .upload import sync_dashboard_metrics
-    # Hardcoded for debugging since we are seeing 0 orders on dashboard
-    sync_dashboard_metrics(1, db)
-    return {"message": "Full metric synchronization completed successfully!"}
-
-
-@router.get("/debug-data")
-def debug_user_data(
     db: DbDep,
+    user_id: int = Query(1)
 ):
-    """Hidden diagnostic endpoint to check user data counts. Temporarily open!"""
-    from ..models import Order, DailyPlatformMetric, Platform, Product, CsvUpload, DailyProductSale, User
-    
-    # Just get the first user for debugging purposes since it's an open endpoint
-    current_user = db.query(User).first()
-    if not current_user:
-        return {"error": "No users found in database"}
-        
-    return {
-        "user": {
-            "id": current_user.id,
-            "email": current_user.email,
-            "name": current_user.name
-        },
-        "counts": {
-            "orders": db.query(Order).filter_by(user_id=current_user.id).count(),
-            "daily_platform_metrics": db.query(DailyPlatformMetric).filter_by(user_id=current_user.id).count(),
-            "daily_product_sales": db.query(DailyProductSale).filter_by(user_id=current_user.id).count(),
-            "platforms": db.query(Platform).filter_by(user_id=current_user.id).count(),
-            "active_platforms": db.query(Platform).filter_by(user_id=current_user.id, is_active=True).count(),
-            "products": db.query(Product).filter_by(user_id=current_user.id).count(),
-            "csv_uploads": db.query(CsvUpload).filter_by(user_id=current_user.id).count(),
-        },
-        "platforms": [
-            {"slug": p.slug, "name": p.name, "is_active": p.is_active}
-            for p in db.query(Platform).filter_by(user_id=current_user.id).all()
-        ],
-        "csv_history": [
-            {
-                "id": u.id,
-                "filename": u.filename,
-                "status": u.status,
-                "rows": u.rows_processed,
-                "error": u.error_message,
-                "date": u.uploaded_at
-            }
-            for u in db.query(CsvUpload).filter_by(user_id=current_user.id).order_by(CsvUpload.uploaded_at.desc()).limit(10).all()
-        ],
-        "recent_orders": [
-            { "id": o.order_id, "amount": o.amount, "date": o.order_date, "platform": o.platform_id } 
-            for o in db.query(Order).filter_by(user_id=current_user.id).order_by(Order.order_date.desc()).limit(10).all()
-        ]
-    }
+    """Manually trigger a full metric sync. Open for debug!"""
+    from .upload import sync_dashboard_metrics
+    sync_dashboard_metrics(user_id, db)
+    return {"message": f"Sync completed for User {user_id}"}
