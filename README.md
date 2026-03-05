@@ -11,6 +11,8 @@
 
 **A production-grade analytics dashboard for D2C sellers managing multiple e-commerce platforms.**
 
+### 🟢 [Live Demo: sellerverse.vercel.app](https://sellerverse.vercel.app/)
+
 </div>
 
 ---
@@ -24,7 +26,8 @@
 | 📦 **Products & Stock** — Inventory levels, low-stock alerts, daily sales rate | ✅ |
 | 📈 **P&L Analytics** — Waterfall chart, cost breakdown, platform comparison | ✅ |
 | ⚡ **19 Platform Integrations** — Connect Amazon, Flipkart, Shopify, Meesho + 15 more | ✅ |
-| 📁 **CSV Upload** — Platform-aware parsing (Amazon, Meesho, Myntra, Nykaa) | ✅ |
+| 📁 **Universal CSV Engine** — Intelligent column mapping, UTF-16/Latin-1 fallbacks | ✅ |
+| 🚀 **High-Speed Processing** — Bulk insertion & in-memory aggregation for 100k+ rows | ✅ |
 | 📥 **Excel / CSV Export** — Orders, P&L (multi-sheet), Products | ✅ |
 | 🔄 **Background Auto-Sync** — APScheduler, every 6 hours for all connected platforms | ✅ |
 | 📧 **Daily Email Reports** — HTML summary sent at 8 AM IST via SMTP | ✅ |
