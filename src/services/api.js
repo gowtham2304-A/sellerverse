@@ -10,7 +10,7 @@ let backendAvailable = null; // null = not checked, true/false = checked
 async function checkBackend() {
     if (backendAvailable !== null) return backendAvailable;
     try {
-        const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(2000) });
+        const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(30000) });
         backendAvailable = res.ok;
     } catch {
         backendAvailable = false;
