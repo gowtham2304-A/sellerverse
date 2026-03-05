@@ -45,9 +45,17 @@ export default function PnL() {
             if (startDate) params.set('start_date', startDate);
             if (endDate) params.set('end_date', endDate);
 
+            const tokenStr = localStorage.getItem('OmniTrack_auth');
+            let token = tokenStr;
+            if (tokenStr && tokenStr.startsWith('{')) {
+                try { token = JSON.parse(tokenStr).token; } catch (e) { }
+            }
+
             const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API}/export/pnl?${params}`);
-            if (!res.ok) throw new Error('Export failed');
+            const res = await fetch(`${API}/export/pnl?${params}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error('Export failed: Authentication Error');
 
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);

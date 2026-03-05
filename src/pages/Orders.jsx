@@ -98,9 +98,17 @@ export default function Orders() {
             if (platformFilter !== 'All') params.set('platform', platformFilter.toLowerCase().replace(' ', ''));
             if (statusFilter !== 'All') params.set('status', statusFilter);
 
+            const tokenStr = localStorage.getItem('OmniTrack_auth');
+            let token = tokenStr;
+            if (tokenStr && tokenStr.startsWith('{')) {
+                try { token = JSON.parse(tokenStr).token; } catch (e) { }
+            }
+
             const API = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-            const res = await fetch(`${API}/export/orders?${params}`);
-            if (!res.ok) throw new Error('Export failed');
+            const res = await fetch(`${API}/export/orders?${params}`, {
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+            });
+            if (!res.ok) throw new Error('Export failed: Authentication Error');
 
             const blob = await res.blob();
             const url = URL.createObjectURL(blob);
