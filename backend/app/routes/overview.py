@@ -219,8 +219,23 @@ def debug_user_data(
             "products": db.query(Product).filter_by(user_id=current_user.id).count(),
             "csv_uploads": db.query(CsvUpload).filter_by(user_id=current_user.id).count(),
         },
+        "platforms": [
+            {"slug": p.slug, "name": p.name, "is_active": p.is_active}
+            for p in db.query(Platform).filter_by(user_id=current_user.id).all()
+        ],
+        "csv_history": [
+            {
+                "id": u.id,
+                "filename": u.filename,
+                "status": u.status,
+                "rows": u.rows_processed,
+                "error": u.error_message,
+                "date": u.uploaded_at
+            }
+            for u in db.query(CsvUpload).filter_by(user_id=current_user.id).order_by(CsvUpload.uploaded_at.desc()).limit(10).all()
+        ],
         "recent_orders": [
-            { "id": o.order_id, "amount": o.amount, "date": o.order_date } 
-            for o in db.query(Order).filter_by(user_id=current_user.id).order_by(Order.order_date.desc()).limit(5).all()
+            { "id": o.order_id, "amount": o.amount, "date": o.order_date, "platform": o.platform_id } 
+            for o in db.query(Order).filter_by(user_id=current_user.id).order_by(Order.order_date.desc()).limit(10).all()
         ]
     }
