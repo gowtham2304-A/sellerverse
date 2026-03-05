@@ -1,0 +1,16 @@
+User ID: 1 | Email: gowthamsherma758@gmail.com
+  Orders: 0, Metrics: 0, Uploads: 3
+    Upload 3: Status: success, Rows: 0, Err: None
+    Upload 2: Status: processing, Rows: 0, Err: None
+    Upload 1: Status: success, Rows: 20000, Err: None
+----------------------------------------
+User ID: 2 | Email: xyz@gmail.com
+  Orders: 0, Metrics: 0, Uploads: 0
+----------------------------------------
+User ID: 3 | Email: mantripragadagowtham@gmail.com
+  Orders: 0, Metrics: 0, Uploads: 1
+    Upload 4: Status: processing, Rows: 0, Err: None
+----------------------------------------
+User ID: 4 | Email: meghanamantripragada@gmail.com
+  Orders: 0, Metrics: 0, Uploads: 0
+----------------------------------------

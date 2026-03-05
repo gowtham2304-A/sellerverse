@@ -247,54 +247,114 @@ def upload_csv(
                     'order_date': o_date
                 })
 
-        # ── Save Orders ──────────────────────────────────
+        # ── Save Orders in Bulk ─────────────────────────
+        order_ids = [str(po.get("order_id")) for po in parsed_orders if po.get("order_id")]
+        
+        # Split order_ids fetching into batches of 1000
+        existing_orders_set = set()
+        for i in range(0, len(order_ids), 1000):
+            batch_ids = order_ids[i:i+1000]
+            existing = db.query(Order.order_id).filter(
+                Order.order_id.in_(batch_ids), 
+                Order.user_id == current_user.id
+            ).all()
+            existing_orders_set.update([str(e[0]) for e in existing])
+            
+        skus = {str(po.get("sku", "GENERAL")) for po in parsed_orders}
+        existing_products_dict = {}
+        skus_list = list(skus)
+        for i in range(0, len(skus_list), 1000):
+            batch_skus = skus_list[i:i+1000]
+            products = db.query(Product).filter(
+                Product.sku.in_(batch_skus), 
+                Product.user_id == current_user.id
+            ).all()
+            for p in products:
+                existing_products_dict[p.sku] = p
+
+        new_products = {} # sku -> Product
+        new_orders = []
+
+        # Find new products
         for po in parsed_orders:
-            order_id = po.get("order_id")
-            if not order_id: continue
-
-            # Check duplicate
-            existing = db.query(Order).filter(Order.order_id == order_id, Order.user_id == current_user.id).first()
-            if existing: continue
-
-            # Find or Create Product
-            sku = po.get("sku", "GENERAL")
-            product = db.query(Product).filter(Product.sku == sku, Product.user_id == current_user.id).first()
-            if not product:
+            order_id = str(po.get("order_id"))
+            if not order_id or order_id in existing_orders_set:
+                continue
+                
+            sku = str(po.get("sku", "GENERAL"))
+            if sku not in existing_products_dict and sku not in new_products:
                 rev = float(po.get("gross_revenue", 0))
-                product = Product(
+                p = Product(
                     user_id=current_user.id,
                     sku=sku,
                     name=po.get("product_name", f"Product {sku}"),
                     category="Uncategorized",
                     cost_price=rev * 0.4,
-                    selling_price=rev or 499.0, # fallback if 0
+                    selling_price=rev or 499.0,
                 )
-                db.add(product)
-                db.flush()
-
+                new_products[sku] = p
+                
+        # Bulk save new products first
+        if new_products:
+            db.bulk_save_objects(list(new_products.values()))
+            db.commit()
+            
+            # Re-fetch new products to get their IDs
+            new_skus = list(new_products.keys())
+            for i in range(0, len(new_skus), 1000):
+                batch_skus = new_skus[i:i+1000]
+                products = db.query(Product).filter(
+                    Product.sku.in_(batch_skus), 
+                    Product.user_id == current_user.id
+                ).all()
+                for p in products:
+                    existing_products_dict[p.sku] = p
+                    
+        # Now prepare and save orders
+        for po in parsed_orders:
+            order_id = str(po.get("order_id"))
+            if not order_id or order_id in existing_orders_set:
+                continue
+                
+            sku = str(po.get("sku", "GENERAL"))
+            product = existing_products_dict.get(sku)
+            if not product or not product.id:
+                continue
+               
             order_dt = po.get("order_date")
             if not order_dt:
                 order_dt = datetime.utcnow()
             elif isinstance(order_dt, str):
                 try: order_dt = pd.to_datetime(order_dt).to_pydatetime()
                 except: order_dt = datetime.utcnow()
+                
+            qty = po.get("quantity", 1)
+            try: qty = int(qty)
+            except: qty = 1
+            
+            amt = float(po.get("gross_revenue", product.selling_price))
 
             order = Order(
                 order_id=order_id,
                 product_id=product.id,
                 platform_id=plat.id,
-                customer_name=po.get("customer_name", "Customer"),
-                city=po.get("city", "Unknown"),
-                quantity=po.get("quantity", 1),
-                amount=float(po.get("gross_revenue", product.selling_price)),
-                status=po.get("status", "Delivered"),
+                customer_name=str(po.get("customer_name", "Customer")),
+                city=str(po.get("city", "Unknown")),
+                quantity=qty,
+                amount=amt,
+                status=str(po.get("status", "Delivered")),
                 user_id=current_user.id,
                 order_date=order_dt
             )
-            db.add(order)
-            orders_created += 1
-
-        db.commit()
+            new_orders.append(order)
+            existing_orders_set.add(order_id)
+            
+        if new_orders:
+            for i in range(0, len(new_orders), 1000):
+                batch = new_orders[i:i+1000]
+                db.bulk_save_objects(batch)
+            db.commit()
+            orders_created = len(new_orders)
 
         # 🚀 Sync metrics
         if orders_created > 0:
