@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -137,7 +137,7 @@ export default function Overview() {
             suffix: '%',
             icon: Percent,
             color: '#f59e0b',
-            sparkData: daily.slice(-14).map(d => (d.totalProfit / d.totalRevenue * 100)),
+            sparkData: daily.slice(-14).map(d => (d.totalRevenue ? (d.totalProfit / d.totalRevenue * 100) : 0)),
         },
         {
             title: 'Returns',
@@ -192,16 +192,13 @@ export default function Overview() {
 
                 <motion.button
                     className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-medium bg-[rgba(124,58,237,0.1)] text-purple-400 border border-purple-500/20 hover:bg-purple-500/20 transition-all hover:text-white"
-                    onClick={async () => {
-                        const { apiFetch } = await import('../services/api');
-                        await apiFetch('/overview/sync-all', { method: 'POST' });
-                        window.location.reload();
-                    }}
+                    onClick={handleGlobalSync}
+                    disabled={isSyncing}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                 >
-                    <RotateCcw size={14} className="animate-spin-slow" />
-                    Sync Data
+                    <RotateCcw size={14} className={isSyncing ? "animate-spin" : ""} />
+                    {isSyncing ? "Syncing..." : "Sync Data"}
                 </motion.button>
             </motion.div>
 
@@ -364,7 +361,7 @@ export default function Overview() {
                                     className="h-full rounded-full"
                                     style={{ background: region.color }}
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${(region.revenue / regionData[0].revenue * 100)}%` }}
+                                    animate={{ width: `${(region.revenue / (regionData[0].revenue || 1) * 100)}%` }}
                                     transition={{ duration: 1.2, delay: 0.8 + i * 0.15 }}
                                 />
                             </div>
