@@ -131,6 +131,18 @@ def sync_dashboard_metrics(user_id: int, db: Session):
         print(f"Sync error: {e}")
         db.rollback()
 
+# Assets and metadata for automatic platform creation
+PLATFORM_ASSETS = {
+    "amazon": {"color": "#FF9900", "icon": "📦", "category": "global", "name": "Amazon"},
+    "flipkart": {"color": "#2874F0", "icon": "🏪", "category": "india", "name": "Flipkart"},
+    "meesho": {"color": "#E91E63", "icon": "🛍️", "category": "india", "name": "Meesho"},
+    "myntra": {"color": "#FF3F6C", "icon": "👗", "category": "india", "name": "Myntra"},
+    "nykaa": {"color": "#FC2779", "icon": "💄", "category": "india", "name": "Nykaa"},
+    "shopify": {"color": "#95BF47", "icon": "🛒", "category": "global", "name": "Shopify"},
+    "other": {"color": "#7c3aed", "icon": "📦", "category": "india", "name": "Other"},
+}
+
+
 @router.post("/csv")
 def upload_csv(
     db: DbDep,
@@ -164,37 +176,51 @@ def upload_csv(
                 except UnicodeDecodeError:
                     df = pd.read_csv(io.BytesIO(content), encoding='latin1')
 
+        cols_text = " ".join(df.columns.astype(str).str.lower())
+        filename_text = (file.filename or "").lower()
+        platform = str(platform).lower().strip()
         rows_processed = len(df)
         orders_created = 0
 
-        # Auto-detect platform from contents if generic or standard
-        cols_text = " ".join(df.columns.astype(str).str.lower())
+        # Auto-detect platform from contents or filename
         if platform == "auto":
-            if "amazon-order-id" in cols_text or "asin" in cols_text:
+            if any(k in cols_text for k in ["amazon-order", "asin", "amz"]) or "amazon" in filename_text:
                 platform = "amazon"
-            elif "sub order no" in cols_text or "meesho" in cols_text:
+            elif any(k in cols_text for k in ["sub order no", "meesho"]) or "meesho" in filename_text:
                 platform = "meesho"
-            elif "fsn" in cols_text or "flipkart" in cols_text:
+            elif any(k in cols_text for k in ["fsn", "flipkart", "flk"]) or "flipkart" in filename_text:
                 platform = "flipkart"
-            elif "style id" in cols_text and "myntra" in cols_text:
+            elif any(k in cols_text for k in ["style id", "myntra"]) or "myntra" in filename_text:
                 platform = "myntra"
-            elif "nykaa" in cols_text:
+            elif any(k in cols_text for k in ["nykaa"]) or "nykaa" in filename_text:
                 platform = "nykaa"
+            elif "shopify" in cols_text or "shopify" in filename_text:
+                platform = "shopify"
 
         # Pre-fetch or Create Platform
         target_platform_slug = platform if platform != "auto" else "other"
         plat = db.query(Platform).filter(Platform.slug == target_platform_slug, Platform.user_id == current_user.id).first()
+        
+        # Determine assets
+        assets = PLATFORM_ASSETS.get(target_platform_slug, PLATFORM_ASSETS["other"])
+        
         if not plat:
             plat = Platform(
                 user_id=current_user.id,
                 slug=target_platform_slug,
-                name=target_platform_slug.replace('-', ' ').capitalize(),
+                name=assets["name"] if target_platform_slug in PLATFORM_ASSETS else target_platform_slug.replace('-', ' ').capitalize(),
+                color=assets["color"],
+                icon=assets["icon"],
+                category=assets["category"],
                 is_active=True
             )
             db.add(plat)
         else:
-            # Ensure the platform is active so it shows on the dashboard
+            # Update existing to active and correct metadata if needed
             plat.is_active = True
+            if target_platform_slug in PLATFORM_ASSETS:
+                plat.icon = assets["icon"]
+                plat.color = assets["color"]
         
         db.flush()
 
