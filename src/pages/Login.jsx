@@ -159,7 +159,7 @@ export default function Login() {
                                 </div>
                                 <h2 className="text-2xl font-bold text-white mb-2">Welcome Back</h2>
                                 <p className="text-sm text-gray-400 text-center">
-                                    Sign in or use demo account to explore
+                                    Sign in to explore your dashboard
                                 </p>
                             </div>
 
@@ -184,7 +184,6 @@ export default function Login() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between ml-1">
                                         <label className="text-xs font-medium text-gray-300">Password</label>
-                                        <button type="button" onClick={() => { setEmail('admin@OmniTrack.com'); setPassword('admin123'); }} className="text-xs text-purple-400 hover:text-purple-300 transition-colors font-medium bg-purple-500/10 px-2 py-0.5 rounded">Use Demo Auth</button>
                                     </div>
                                     <div className="relative">
                                         <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
