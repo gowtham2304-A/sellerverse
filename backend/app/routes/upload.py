@@ -141,7 +141,13 @@ def upload_csv(
         if file.filename and file.filename.endswith((".xlsx", ".xls")):
             df = pd.read_excel(io.BytesIO(content))
         else:
-            df = pd.read_csv(io.BytesIO(content))
+            try:
+                df = pd.read_csv(io.BytesIO(content))
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(io.BytesIO(content), encoding='utf-16')
+                except UnicodeDecodeError:
+                    df = pd.read_csv(io.BytesIO(content), encoding='latin1')
 
         rows_processed = len(df)
         orders_created = 0
