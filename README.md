@@ -306,5 +306,4 @@ notifications           — In-app notification inbox
 ---
 
 <div align="center">
-Made with ⚡ by the OmniTrack team
 </div>
