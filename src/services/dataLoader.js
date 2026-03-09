@@ -13,7 +13,7 @@ import {
     getEmptyPnLData, getEmptyStockData
 } from '../data/sampleData';
 
-const isAuth = () => !!localStorage.getItem('sellerverse_auth');
+const isAuth = () => !!localStorage.getItem('OmniTrack_auth');
 
 
 // ── Overview ────────────────────────────────────────────
